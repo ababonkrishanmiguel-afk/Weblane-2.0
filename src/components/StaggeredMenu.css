@@ -1,0 +1,250 @@
+.staggered-menu-wrapper {
+  position: relative;
+  z-index: 80;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.staggered-menu-wrapper.fixed-wrapper {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.staggered-menu-header {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 20;
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px clamp(18px, 4vw, 56px);
+  background: transparent;
+  pointer-events: none;
+}
+
+.staggered-menu-header > * {
+  pointer-events: auto;
+}
+
+.sm-logo {
+  width: clamp(76px, 8vw, 112px);
+  height: 54px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sm-logo-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.sm-toggle {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(10, 10, 11, 0.34);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.sm-toggle:focus-visible {
+  outline: 2px solid rgba(20, 184, 166, 0.7);
+  outline-offset: 4px;
+}
+
+.sm-toggle-textWrap {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.sm-toggle-textInner {
+  display: flex;
+  flex-direction: column;
+}
+
+.sm-toggle-line {
+  display: block;
+  height: 1em;
+}
+
+.sm-icon {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  will-change: transform;
+}
+
+.sm-icon-line {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 24px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+}
+
+.sm-icon-line-v {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.sm-prelayers {
+  position: absolute;
+  inset: 0 0 0 auto;
+  z-index: 5;
+  width: min(620px, 100vw);
+  pointer-events: none;
+  opacity: 1;
+}
+
+[data-position="left"] .sm-prelayers {
+  inset: 0 auto 0 0;
+}
+
+.sm-prelayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+}
+
+.staggered-menu-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 10;
+  width: min(620px, 100vw);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(108px, 15vh, 150px) clamp(26px, 5vw, 58px) clamp(30px, 5vw, 58px);
+  background:
+    radial-gradient(circle at 20% 10%, rgba(59, 130, 246, 0.16), transparent 22rem),
+    linear-gradient(145deg, rgba(248, 251, 255, 0.98), rgba(235, 249, 246, 0.96));
+  box-shadow: -34px 0 120px rgba(8, 19, 22, 0.18);
+  overflow-y: auto;
+  pointer-events: auto;
+  opacity: 0;
+}
+
+[data-position="left"] .staggered-menu-panel {
+  right: auto;
+  left: 0;
+}
+
+.sm-panel-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.sm-panel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.45rem, 1.2vh, 0.85rem);
+}
+
+.sm-panel-itemWrap {
+  position: relative;
+  overflow: hidden;
+  line-height: 1;
+}
+
+.sm-panel-item {
+  position: relative;
+  display: inline-block;
+  padding-right: 4rem;
+  color: #081316;
+  font-family: "Neue Montreal", "Inter", system-ui, sans-serif;
+  font-size: clamp(1.7rem, 4vw, 3.35rem);
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.055em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+.sm-panel-item:hover {
+  color: var(--sm-accent, #14b8a6);
+  transform: translateX(8px);
+}
+
+.sm-panel-itemLabel {
+  display: inline-block;
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+
+.sm-panel-list[data-numbering] {
+  counter-reset: smItem;
+}
+
+.sm-panel-list[data-numbering] .sm-panel-item::after {
+  counter-increment: smItem;
+  content: counter(smItem, decimal-leading-zero);
+  position: absolute;
+  top: 0.08em;
+  right: 0.45rem;
+  color: var(--sm-accent, #14b8a6);
+  font-family: "General Sans", "Inter", system-ui, sans-serif;
+  font-size: clamp(0.72rem, 1vw, 0.9rem);
+  font-weight: 200;
+  letter-spacing: 0.08em;
+  opacity: var(--sm-num-opacity, 0);
+  pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  .staggered-menu-header {
+    min-height: 70px;
+    padding: 12px 14px;
+  }
+
+  .sm-logo {
+    width: 74px;
+    height: 46px;
+  }
+
+  .sm-toggle {
+    width: 50px;
+    height: 50px;
+  }
+
+  .sm-prelayers,
+  .staggered-menu-panel {
+    width: 100vw;
+  }
+
+  .staggered-menu-panel {
+    padding: 110px 28px 34px;
+  }
+
+  .sm-panel-item {
+    font-size: clamp(1.75rem, 11vw, 3.1rem);
+  }
+}
