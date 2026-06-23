@@ -151,8 +151,8 @@ function LoadingIntro({ isVisible, isExiting }) {
     <div className={`loading-intro ${isExiting ? "is-exiting" : ""}`} role="status" aria-live="polite">
       <DecryptedText
         text="WebLane"
-        speed={34}
-        maxIterations={16}
+        speed={720}
+        maxIterations={7}
         sequential
         revealDirection="center"
         animateOn="view"
@@ -241,7 +241,7 @@ function BeforeAfter() {
         stage,
         { "--reveal": "1%" },
         {
-          "--reveal": "50%",
+          "--reveal": "90%",
           ease: "none",
           scrollTrigger: {
             trigger: sectionRef.current,
@@ -307,7 +307,22 @@ function Process() {
 
   const drawFrame = useCallback((frameIndex = currentFrameRef.current) => {
     const canvas = canvasRef.current;
-    const image = imagesRef.current[frameIndex];
+    let image = imagesRef.current[frameIndex];
+
+    if (!image?.complete) {
+      for (let offset = 1; offset < PROCESS_FRAME_COUNT; offset += 1) {
+        const previous = imagesRef.current[frameIndex - offset];
+        const next = imagesRef.current[frameIndex + offset];
+        if (previous?.complete) {
+          image = previous;
+          break;
+        }
+        if (next?.complete) {
+          image = next;
+          break;
+        }
+      }
+    }
 
     if (!canvas || !image?.complete) return;
 
@@ -340,11 +355,36 @@ function Process() {
   useEffect(() => {
     let cancelled = false;
     let loadedFrames = 0;
+    let hasAnnouncedReady = false;
+    let hasStartedLoading = false;
+    let observer;
+    const idleHandles = [];
+    const timeoutHandles = [];
+
+    const announceReady = () => {
+      if (hasAnnouncedReady || cancelled) return;
+      hasAnnouncedReady = true;
+      window.__WEBLANE_PROCESS_SEQUENCE_READY = true;
+      window.dispatchEvent(new CustomEvent("weblane:process-sequence-ready"));
+    };
 
     const loadedImages = new Array(PROCESS_FRAME_COUNT);
     imagesRef.current = loadedImages;
 
-    frameSources.forEach((src, index) => {
+    const schedule = (callback, delay = 0) => {
+      if ("requestIdleCallback" in window) {
+        const handle = window.requestIdleCallback(callback, { timeout: 1000 });
+        idleHandles.push(handle);
+        return;
+      }
+
+      const handle = window.setTimeout(callback, delay);
+      timeoutHandles.push(handle);
+    };
+
+    const loadFrame = (index) => {
+      if (cancelled || loadedImages[index]) return;
+
       const image = new Image();
       image.decoding = "async";
       loadedImages[index] = image;
@@ -352,20 +392,63 @@ function Process() {
         loadedFrames += 1;
         if (cancelled) return;
 
-        if (index === 0) window.requestAnimationFrame(() => drawFrame(0));
+        if (index === 0) {
+          window.requestAnimationFrame(() => drawFrame(0));
+          announceReady();
+        }
         if (loadedFrames === PROCESS_FRAME_COUNT) {
           drawFrame(currentFrameRef.current);
           ScrollTrigger.refresh();
         }
       };
-      image.src = src;
-    });
+      image.onerror = () => {
+        loadedFrames += 1;
+        if (index === 0) announceReady();
+      };
+      image.src = frameSources[index];
+    };
+
+    const loadBatch = (startIndex) => {
+      if (cancelled || startIndex >= PROCESS_FRAME_COUNT) return;
+
+      const endIndex = Math.min(PROCESS_FRAME_COUNT, startIndex + 8);
+      for (let index = startIndex; index < endIndex; index += 1) {
+        loadFrame(index);
+      }
+
+      schedule(() => loadBatch(endIndex), 70);
+    };
+
+    const startLoading = () => {
+      if (hasStartedLoading || cancelled) return;
+      hasStartedLoading = true;
+      loadFrame(0);
+      schedule(() => loadBatch(1), 160);
+    };
+
+    if ("IntersectionObserver" in window && sectionRef.current) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) {
+            startLoading();
+            observer?.disconnect();
+          }
+        },
+        { rootMargin: "1800px 0px" }
+      );
+      observer.observe(sectionRef.current);
+    } else {
+      schedule(startLoading, 1000);
+    }
 
     const onResize = () => drawFrame(currentFrameRef.current);
     window.addEventListener("resize", onResize);
 
     return () => {
       cancelled = true;
+      observer?.disconnect();
+      idleHandles.forEach((handle) => window.cancelIdleCallback?.(handle));
+      timeoutHandles.forEach((handle) => window.clearTimeout(handle));
       window.removeEventListener("resize", onResize);
     };
   }, [drawFrame, frameSources]);
@@ -649,8 +732,17 @@ function App() {
 
   useEffect(() => {
     let isMounted = true;
-    const MIN_LOAD_TIME = 10000;
-    const MAX_LOAD_TIME = 18000;
+    const MIN_LOAD_TIME = 5000;
+    const MAX_LOAD_TIME = 45000;
+
+    const waitForEventOrFlag = (eventName, flagName) => new Promise((resolve) => {
+      if (window[flagName]) {
+        resolve();
+        return;
+      }
+
+      window.addEventListener(eventName, resolve, { once: true });
+    });
 
     const waitForWindowLoad = new Promise((resolve) => {
       if (document.readyState === "complete") {
@@ -661,6 +753,36 @@ function App() {
       window.addEventListener("load", resolve, { once: true });
     });
 
+    const waitForFonts = document.fonts?.ready?.catch(() => undefined) ?? Promise.resolve();
+
+    const waitForDocumentMedia = new Promise((resolve) => {
+      window.requestAnimationFrame(() => {
+        const images = Array.from(document.images);
+        const videos = Array.from(document.querySelectorAll("video"));
+
+        const imagePromises = images.map((image) => {
+          if (image.complete && image.naturalWidth > 0) return Promise.resolve();
+          if (image.decode) return image.decode().catch(() => undefined);
+
+          return new Promise((imageResolve) => {
+            image.addEventListener("load", imageResolve, { once: true });
+            image.addEventListener("error", imageResolve, { once: true });
+          });
+        });
+
+        const videoPromises = videos.map((video) => {
+          if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) return Promise.resolve();
+
+          return new Promise((videoResolve) => {
+            video.addEventListener("loadeddata", videoResolve, { once: true });
+            video.addEventListener("error", videoResolve, { once: true });
+          });
+        });
+
+        Promise.all([...imagePromises, ...videoPromises]).then(resolve);
+      });
+    });
+
     const minimumDuration = new Promise((resolve) => {
       window.setTimeout(resolve, MIN_LOAD_TIME);
     });
@@ -669,7 +791,15 @@ function App() {
       window.setTimeout(resolve, MAX_LOAD_TIME);
     });
 
-    Promise.race([Promise.all([waitForWindowLoad, minimumDuration]), maximumDuration]).then(() => {
+    const resourceGate = Promise.all([
+      waitForWindowLoad,
+      waitForFonts,
+      waitForDocumentMedia,
+      waitForEventOrFlag("weblane:hero-sequence-ready", "__WEBLANE_HERO_SEQUENCE_READY"),
+      minimumDuration
+    ]);
+
+    Promise.race([resourceGate, maximumDuration]).then(() => {
       if (!isMounted) return;
 
       setIsLoaderExiting(true);
@@ -739,22 +869,74 @@ function App() {
         }
       });
 
-      gsap.utils.toArray(".outcome-row, .work-panel").forEach((element) => {
-        gsap.fromTo(
-          element,
-          { y: 64, autoAlpha: 0, clipPath: "inset(18% 0% 18% 0% round 28px)" },
-          {
-            y: 0,
+      const cardTargets = gsap.utils.toArray(".image-bento-card, .outcome-row, .package-card, .work-panel");
+      gsap.set(cardTargets, {
+        autoAlpha: 0,
+        y: 58,
+        scale: 0.965,
+        rotateZ: -0.75,
+        filter: "blur(10px)",
+        transformOrigin: "50% 60%",
+        willChange: "transform, opacity, filter"
+      });
+
+      ScrollTrigger.batch(cardTargets, {
+        interval: 0.08,
+        batchMax: 4,
+        start: "top 88%",
+        end: "bottom 12%",
+        onEnter: (batch) => {
+          gsap.to(batch, {
             autoAlpha: 1,
-            clipPath: "inset(0% 0% 0% 0% round 28px)",
+            y: 0,
+            scale: 1,
+            rotateZ: 0,
+            filter: "blur(0px)",
+            duration: reduceMotion ? 0 : 0.9,
             ease: "power3.out",
-            scrollTrigger: {
-              trigger: element,
-              start: "top 86%",
-              toggleActions: "play none none reverse"
-            }
-          }
-        );
+            stagger: 0.08,
+            overwrite: true
+          });
+        },
+        onEnterBack: (batch) => {
+          gsap.to(batch, {
+            autoAlpha: 1,
+            y: 0,
+            scale: 1,
+            rotateZ: 0,
+            filter: "blur(0px)",
+            duration: reduceMotion ? 0 : 0.7,
+            ease: "power3.out",
+            stagger: 0.06,
+            overwrite: true
+          });
+        },
+        onLeave: (batch) => {
+          gsap.to(batch, {
+            autoAlpha: 0.28,
+            y: -42,
+            scale: 0.985,
+            rotateZ: 0.45,
+            filter: "blur(8px)",
+            duration: reduceMotion ? 0 : 0.55,
+            ease: "power2.out",
+            stagger: 0.04,
+            overwrite: true
+          });
+        },
+        onLeaveBack: (batch) => {
+          gsap.to(batch, {
+            autoAlpha: 0,
+            y: 58,
+            scale: 0.965,
+            rotateZ: -0.75,
+            filter: "blur(10px)",
+            duration: reduceMotion ? 0 : 0.5,
+            ease: "power2.out",
+            stagger: 0.04,
+            overwrite: true
+          });
+        }
       });
 
       ScrollTrigger.refresh();

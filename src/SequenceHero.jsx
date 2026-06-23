@@ -25,7 +25,22 @@ export default function SequenceHero() {
 
   const drawFrame = useCallback((frameIndex = currentFrameRef.current) => {
     const canvas = canvasRef.current;
-    const image = imagesRef.current[frameIndex];
+    let image = imagesRef.current[frameIndex];
+
+    if (!image?.complete) {
+      for (let offset = 1; offset < FRAME_COUNT; offset += 1) {
+        const previous = imagesRef.current[frameIndex - offset];
+        const next = imagesRef.current[frameIndex + offset];
+        if (previous?.complete) {
+          image = previous;
+          break;
+        }
+        if (next?.complete) {
+          image = next;
+          break;
+        }
+      }
+    }
 
     if (!canvas || !image?.complete) return;
 
@@ -58,11 +73,36 @@ export default function SequenceHero() {
   useEffect(() => {
     let cancelled = false;
     let loadedFrames = 0;
+    let hasAnnouncedReady = false;
+    const idleHandles = [];
+    const timeoutHandles = [];
 
-    imagesRef.current = frameSources.map((src, index) => {
+    const announceReady = () => {
+      if (hasAnnouncedReady || cancelled) return;
+      hasAnnouncedReady = true;
+      window.__WEBLANE_HERO_SEQUENCE_READY = true;
+      window.dispatchEvent(new CustomEvent("weblane:hero-sequence-ready"));
+    };
+
+    imagesRef.current = new Array(FRAME_COUNT);
+
+    const schedule = (callback, delay = 0) => {
+      if ("requestIdleCallback" in window) {
+        const handle = window.requestIdleCallback(callback, { timeout: 900 });
+        idleHandles.push(handle);
+        return;
+      }
+
+      const handle = window.setTimeout(callback, delay);
+      timeoutHandles.push(handle);
+    };
+
+    const loadFrame = (index) => {
+      if (cancelled || imagesRef.current[index]) return;
+
       const image = new Image();
       image.decoding = "async";
-      image.src = src;
+      imagesRef.current[index] = image;
       image.onload = () => {
         loadedFrames += 1;
 
@@ -70,6 +110,7 @@ export default function SequenceHero() {
 
         if (index === 0) {
           drawFrame(0);
+          announceReady();
         }
 
         if (loadedFrames === FRAME_COUNT) {
@@ -78,14 +119,34 @@ export default function SequenceHero() {
           ScrollTrigger.refresh();
         }
       };
-      return image;
-    });
+      image.onerror = () => {
+        loadedFrames += 1;
+        if (index === 0) announceReady();
+      };
+      image.src = frameSources[index];
+    };
+
+    const loadBatch = (startIndex) => {
+      if (cancelled || startIndex >= FRAME_COUNT) return;
+
+      const endIndex = Math.min(FRAME_COUNT, startIndex + 8);
+      for (let index = startIndex; index < endIndex; index += 1) {
+        loadFrame(index);
+      }
+
+      schedule(() => loadBatch(endIndex), 50);
+    };
+
+    loadFrame(0);
+    schedule(() => loadBatch(1), 120);
 
     const onResize = () => drawFrame(currentFrameRef.current);
     window.addEventListener("resize", onResize);
 
     return () => {
       cancelled = true;
+      idleHandles.forEach((handle) => window.cancelIdleCallback?.(handle));
+      timeoutHandles.forEach((handle) => window.clearTimeout(handle));
       window.removeEventListener("resize", onResize);
     };
   }, [drawFrame, frameSources]);

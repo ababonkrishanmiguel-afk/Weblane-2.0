@@ -148,9 +148,15 @@ assert(packageJson.includes('"@tailwindcss/vite"'), "Tailwind Vite plugin should
 assert(viteConfig.includes("tailwindcss()"), "Tailwind should be configured in Vite");
 assert(styles.includes('@import "tailwindcss"'), "Tailwind CSS should be imported into the app styles");
 assert(source.includes("DecryptedText"), "Loading intro should use DecryptedText");
-assert(source.includes("MIN_LOAD_TIME = 10000"), "Loading intro should stay visible for about 10 seconds");
+assert(source.includes("speed={720}"), "Loading WebLane title should decrypt over about 5 seconds");
+assert(source.includes("MIN_LOAD_TIME = 5000"), "Loading intro should stay visible for at least 5 seconds");
 assert(source.includes('document.readyState === "complete"'), "Loading intro should wait for window resource loading");
-assert(source.includes("MAX_LOAD_TIME = 18000"), "Loading intro should have a safety timeout if resources hang");
+assert(source.includes("waitForDocumentMedia"), "Loading intro should wait for document images and videos");
+assert(source.includes("weblane:hero-sequence-ready"), "Loading intro should wait for the hero sequence frames");
+assert(!source.includes('waitForEventOrFlag("weblane:process-sequence-ready"'), "Loading intro should not block on below-the-fold process frames");
+assert(source.includes("IntersectionObserver"), "Process sequence should lazy-load near the process section");
+assert(source.includes("requestIdleCallback"), "Image sequences should preload in idle batches");
+assert(source.includes("MAX_LOAD_TIME = 45000"), "Loading intro should have a safety timeout if resources hang");
 assert(styles.includes(".loading-intro.is-exiting"), "Loading intro should fade out after the loading gate completes");
 assert(!styles.includes("loadingIntroExit 1450ms"), "Loading intro should not auto-hide after 1.45 seconds");
 assert(source.includes("RotatingText"), "Best-for strip should use RotatingText");
@@ -180,7 +186,7 @@ assert(styles.includes(".before-after-section"), "Before/After section should ha
 assert(styles.includes("opacity: 1"), "Before/After slider should be visible by default after the bento cards");
 assert(styles.includes("clip-path: polygon(var(--reveal) 0"), "Before image should reveal with a slanted clip-path");
 assert(styles.includes("skewX(-13deg)"), "Before/After divider should be slanted");
-assert(source.includes('"--reveal": "1%"') && source.includes('"--reveal": "50%"'), "Before/After auto reveal should stop at 50%");
+assert(source.includes('"--reveal": "1%"') && source.includes('"--reveal": "90%"'), "Before/After auto reveal should reveal 90% of the after image");
 assert(source.includes("onPointerDown={startComparisonDrag}"), "Before/After divider should support manual dragging");
 assert(source.includes("pin: true"), "Why WebLane should use pinned horizontal scrolling on desktop");
 assert(styles.includes(".horizontal-belief-track"), "Why WebLane should use a horizontal track");
@@ -210,4 +216,6 @@ for (const asset of ["Long.png", "short1.png", "short2.png", "before image.png",
   assert(existsSync(new URL(`../public/sections/${asset}`, import.meta.url)), `Missing provided section asset: ${asset}`);
 }
 assert(source.includes("StaggeredMenu"), "Navbar should use the React Bits StaggeredMenu integration");
+assert(source.includes("ScrollTrigger.batch(cardTargets"), "Cards should use batched GSAP in/out animation");
+assert(styles.includes("will-change: transform, opacity, filter"), "Animated cards should use compositor-friendly hints");
 assert(staggeredMenuStyles.includes("font-size: clamp(1.7rem, 4vw, 3.35rem)"), "Staggered menu tab fonts should be smaller");
