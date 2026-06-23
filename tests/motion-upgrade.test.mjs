@@ -7,11 +7,13 @@ const staggeredMenu = readFileSync(new URL("../src/components/StaggeredMenu.jsx"
 const borderGlow = readFileSync(new URL("../src/components/BorderGlow.jsx", import.meta.url), "utf8");
 const gradualBlur = readFileSync(new URL("../src/components/GradualBlur.jsx", import.meta.url), "utf8");
 const decryptedText = readFileSync(new URL("../src/components/DecryptedText.jsx", import.meta.url), "utf8");
+const ribbons = readFileSync(new URL("../src/components/Ribbons.jsx", import.meta.url), "utf8");
 const rotatingText = readFileSync(new URL("../src/components/RotatingText.jsx", import.meta.url), "utf8");
 const scrollVelocity = readFileSync(new URL("../src/components/ScrollVelocity.jsx", import.meta.url), "utf8");
+const splitText = readFileSync(new URL("../src/components/SplitText.jsx", import.meta.url), "utf8");
 const viteConfig = readFileSync(new URL("../vite.config.js", import.meta.url), "utf8");
 const packageJson = readFileSync(new URL("../package.json", import.meta.url), "utf8");
-const combinedSource = `${source}\n${sequenceHero}\n${staggeredMenu}\n${borderGlow}\n${gradualBlur}\n${decryptedText}\n${rotatingText}\n${scrollVelocity}`;
+const combinedSource = `${source}\n${sequenceHero}\n${staggeredMenu}\n${borderGlow}\n${gradualBlur}\n${decryptedText}\n${ribbons}\n${rotatingText}\n${scrollVelocity}\n${splitText}`;
 const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 const staggeredMenuStyles = readFileSync(new URL("../src/components/StaggeredMenu.css", import.meta.url), "utf8");
 const combinedStyles = `${styles}\n${staggeredMenuStyles}`;
@@ -115,6 +117,7 @@ const styleMarkers = [
   ".image-bento-card figcaption",
   ".border-glow",
   ".gradual-blur",
+  ".ribbons-cursor",
   ".best-for-strip",
   ".rotating-text",
   ".scroll-velocity",
@@ -162,6 +165,13 @@ assert(source.includes("RotatingText"), "Best-for strip should use RotatingText"
 assert(source.includes("ScrollVelocity"), "Velocity transition should use ScrollVelocity");
 assert(source.includes("BorderGlow"), "Bento cards and copy should use BorderGlow");
 assert(source.includes("GradualBlur"), "Bento cards should use GradualBlur");
+assert(source.includes("Ribbons"), "Page should include the React Bits Ribbons cursor effect");
+assert(source.includes("SplitText"), "Important headings should use SplitText");
+assert(source.includes('className="bento-gradual-blur"'), "Photo bento cards should scope GradualBlur");
+assert(source.includes('className="comparison-gradual-blur"'), "Before/After should scope GradualBlur without replacing slider logic");
+assert(source.includes('className="package-gradual-blur"'), "Package cards should scope GradualBlur");
+assert(styles.includes("pointer-events: none"), "Decorative blur and cursor layers should not block interactions");
+assert(styles.includes("@media (pointer: coarse), (prefers-reduced-motion: reduce)"), "Ribbons cursor should be disabled on touch or reduced motion");
 assert(source.indexOf("<BestForStrip />") > source.indexOf("<SequenceHero />"), "Best-for strip should appear after the hero");
 assert(source.indexOf("<ImageBentoSection />") > source.indexOf("<BestForStrip />"), "Bento should appear after the best-for strip");
 assert(sequenceHero.includes('end: "bottom bottom"'), "Sequence hero should release smoothly as the next section enters");
@@ -226,5 +236,7 @@ for (const asset of ["Long.png", "short1.png", "short2.png", "before image.png",
 }
 assert(source.includes("StaggeredMenu"), "Navbar should use the React Bits StaggeredMenu integration");
 assert(source.includes("ScrollTrigger.batch(cardTargets"), "Cards should use batched GSAP in/out animation");
+assert(source.includes("y: 44") && source.includes("duration: reduceMotion ? 0 : 0.85"), "Cards and headings should use bottom-to-top reveal motion");
+assert(!source.includes("rotateZ: -0.75"), "Cards should not use the previous jumpy rotate pop animation");
 assert(styles.includes("will-change: transform, opacity, filter"), "Animated cards should use compositor-friendly hints");
 assert(staggeredMenuStyles.includes("font-size: clamp(1.7rem, 4vw, 3.35rem)"), "Staggered menu tab fonts should be smaller");

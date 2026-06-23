@@ -7,8 +7,10 @@ import SequenceHero from "./SequenceHero.jsx";
 import BorderGlow from "./components/BorderGlow.jsx";
 import DecryptedText from "./components/DecryptedText.jsx";
 import GradualBlur from "./components/GradualBlur.jsx";
+import Ribbons from "./components/Ribbons.jsx";
 import RotatingText from "./components/RotatingText.jsx";
 import ScrollVelocity from "./components/ScrollVelocity.jsx";
+import SplitText from "./components/SplitText.jsx";
 import StaggeredMenu from "./components/StaggeredMenu.jsx";
 import "./styles.css";
 
@@ -188,7 +190,7 @@ function ImageBentoSection() {
         {bentoImages.map((image) => (
           <BorderGlow as="figure" className={`image-bento-card ${image.className}`} key={image.src}>
             <img src={image.src} alt={image.alt} loading="eager" fetchPriority="high" />
-            <GradualBlur />
+            <GradualBlur className="bento-gradual-blur" />
             <figcaption>
               <span>{image.eyebrow}</span>
               <BorderGlow as="strong" className="bento-copy-glow">{image.copy}</BorderGlow>
@@ -344,6 +346,7 @@ function BeforeAfter() {
             <img src="/sections/after image.png" alt="After website state" loading="eager" fetchPriority="high" />
             <span>After</span>
           </div>
+          <GradualBlur className="comparison-gradual-blur" />
           <div className="comparison-divider" aria-hidden="true">
             <span />
           </div>
@@ -529,11 +532,29 @@ function Process() {
         if (activeStage === activeStageRef.current) return;
 
         activeStageRef.current = activeStage;
-        gsap.to(states, { autoAlpha: 0, duration: reduceMotion ? 0 : 0.28, ease: "power2.out", overwrite: true });
+        gsap.to(states, {
+          autoAlpha: 0,
+          y: 28,
+          filter: "blur(8px)",
+          duration: reduceMotion ? 0 : 0.28,
+          ease: "power2.out",
+          overwrite: true
+        });
 
         if (activeStage) {
           const activeElement = section.querySelector(`[data-process-state="${activeStage}"]`);
-          gsap.to(activeElement, { autoAlpha: 1, duration: reduceMotion ? 0 : 0.42, ease: "power2.out", overwrite: true });
+          gsap.fromTo(
+            activeElement,
+            { autoAlpha: 0, y: 34, filter: "blur(8px)" },
+            {
+              autoAlpha: 1,
+              y: 0,
+              filter: "blur(0px)",
+              duration: reduceMotion ? 0 : 0.72,
+              ease: "power3.out",
+              overwrite: true
+            }
+          );
         }
       };
 
@@ -544,7 +565,7 @@ function Process() {
         updateTextState(frame + 1);
       };
 
-      gsap.set(states, { autoAlpha: 0 });
+      gsap.set(states, { autoAlpha: 0, y: 34, filter: "blur(8px)" });
 
       ScrollTrigger.create({
         trigger: section,
@@ -572,6 +593,19 @@ function Process() {
         </div>
         <div className="process-text-layer" aria-live="polite">
           <article className="process-text-state process-text-center" data-process-state="discovery" data-start-frame="0001" data-end-frame="0034">
+            <div className="process-method-intro">
+              <SplitText
+                text="The WebLane Method"
+                tag="h2"
+                splitType="words"
+                className="process-method-heading"
+                from={{ opacity: 0, y: 34 }}
+                to={{ opacity: 1, y: 0 }}
+                duration={0.8}
+                delay={65}
+              />
+              <p className="process-method-summary">A guided process that turns unclear business websites into polished, trustworthy, inquiry-ready experiences.</p>
+            </div>
             <h3>Discovery</h3>
             <p>We uncover what your website needs to make your business clearer, easier to trust, and easier to choose.</p>
           </article>
@@ -634,6 +668,7 @@ function Packages() {
       <div className="package-grid parallax-visual">
         {packages.map((packageItem) => (
           <article className="package-card" key={packageItem.title}>
+            <GradualBlur className="package-gradual-blur" />
             <div>
               <span>{packageItem.title}</span>
               <strong>{packageItem.price}</strong>
@@ -896,17 +931,17 @@ function App() {
         if (sectionCopy) {
           gsap.fromTo(
             sectionCopy,
-            { y: 80, autoAlpha: 0, filter: "blur(12px)" },
+            { y: 44, autoAlpha: 0, filter: "blur(8px)" },
             {
               y: 0,
               autoAlpha: 1,
               filter: "blur(0px)",
-              ease: "none",
+              duration: reduceMotion ? 0 : 0.85,
+              ease: "power3.out",
               scrollTrigger: {
                 trigger: section,
                 start: "top 82%",
-                end: "top 38%",
-                scrub: reduceMotion ? false : true
+                toggleActions: "play none none reverse"
               }
             }
           );
@@ -934,10 +969,8 @@ function App() {
       const cardTargets = gsap.utils.toArray(".image-bento-card, .outcome-row, .package-card, .work-panel");
       gsap.set(cardTargets, {
         autoAlpha: 0,
-        y: 58,
-        scale: 0.965,
-        rotateZ: -0.75,
-        filter: "blur(10px)",
+        y: 44,
+        filter: "blur(8px)",
         transformOrigin: "50% 60%",
         willChange: "transform, opacity, filter"
       });
@@ -951,8 +984,6 @@ function App() {
           gsap.to(batch, {
             autoAlpha: 1,
             y: 0,
-            scale: 1,
-            rotateZ: 0,
             filter: "blur(0px)",
             duration: reduceMotion ? 0 : 0.9,
             ease: "power3.out",
@@ -964,8 +995,6 @@ function App() {
           gsap.to(batch, {
             autoAlpha: 1,
             y: 0,
-            scale: 1,
-            rotateZ: 0,
             filter: "blur(0px)",
             duration: reduceMotion ? 0 : 0.7,
             ease: "power3.out",
@@ -976,10 +1005,8 @@ function App() {
         onLeave: (batch) => {
           gsap.to(batch, {
             autoAlpha: 0.28,
-            y: -42,
-            scale: 0.985,
-            rotateZ: 0.45,
-            filter: "blur(8px)",
+            y: -24,
+            filter: "blur(6px)",
             duration: reduceMotion ? 0 : 0.55,
             ease: "power2.out",
             stagger: 0.04,
@@ -989,10 +1016,8 @@ function App() {
         onLeaveBack: (batch) => {
           gsap.to(batch, {
             autoAlpha: 0,
-            y: 58,
-            scale: 0.965,
-            rotateZ: -0.75,
-            filter: "blur(10px)",
+            y: 44,
+            filter: "blur(8px)",
             duration: reduceMotion ? 0 : 0.5,
             ease: "power2.out",
             stagger: 0.04,
@@ -1009,6 +1034,7 @@ function App() {
   return (
     <main className="page-shell antialiased" ref={pageRef}>
       <LoadingIntro isVisible={isLoading} isExiting={isLoaderExiting} />
+      <Ribbons />
       <Nav />
       <SequenceHero />
       <BestForStrip />

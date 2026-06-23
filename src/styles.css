@@ -193,6 +193,51 @@ a {
   background: linear-gradient(180deg, rgba(248, 251, 255, 0), rgba(248, 251, 255, 0.52));
 }
 
+.bento-gradual-blur {
+  height: 30%;
+  opacity: 0.72;
+  backdrop-filter: blur(2.5px);
+  -webkit-backdrop-filter: blur(2.5px);
+}
+
+.comparison-gradual-blur {
+  z-index: 3;
+  height: 18%;
+  opacity: 0.36;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.package-gradual-blur {
+  inset: 0 0 auto;
+  height: 46%;
+  z-index: 0;
+  opacity: 0.34;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.9), transparent);
+  background: linear-gradient(180deg, rgba(248, 251, 255, 0.64), rgba(248, 251, 255, 0));
+}
+
+.ribbons-cursor {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  width: 100vw;
+  height: 100svh;
+  pointer-events: none;
+  opacity: 0.58;
+  mix-blend-mode: multiply;
+}
+
+.split-parent {
+  overflow: hidden;
+}
+
+.split-word,
+.split-line,
+.split-char {
+  will-change: transform, opacity;
+}
+
 .best-for-strip {
   width: min(1220px, calc(100% - 36px));
   min-height: clamp(120px, 16vw, 210px);
@@ -931,6 +976,33 @@ p {
   justify-self: end;
 }
 
+.process-method-intro {
+  display: grid;
+  gap: clamp(8px, 1.2vw, 14px);
+  max-width: 760px;
+  margin: 0 auto clamp(22px, 3.4vw, 44px);
+  text-align: center;
+}
+
+.process-method-heading {
+  color: var(--text);
+  font-family: "Neue Montreal", "Inter", system-ui, sans-serif;
+  font-size: clamp(2.6rem, 5.7vw, 6.4rem);
+  font-weight: 500;
+  line-height: 0.94;
+  letter-spacing: -0.06em;
+}
+
+.process-method-summary {
+  max-width: 680px;
+  margin: 0 auto;
+  color: var(--text-soft);
+  font-family: "General Sans", "Inter", system-ui, sans-serif;
+  font-size: clamp(1rem, 1.5vw, 1.28rem);
+  font-weight: 200;
+  line-height: 1.52;
+}
+
 .process-text-state h3 {
   margin: 0 0 12px;
   color: var(--text);
@@ -982,6 +1054,7 @@ p {
 }
 
 .package-card {
+  position: relative;
   min-height: 540px;
   display: flex;
   flex-direction: column;
@@ -996,6 +1069,13 @@ p {
   box-shadow: 0 24px 90px rgba(15, 23, 42, 0.12);
   backdrop-filter: blur(14px);
   will-change: transform, opacity, filter;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.package-card > *:not(.gradual-blur) {
+  position: relative;
+  z-index: 1;
 }
 
 .package-card span,
@@ -1430,8 +1510,18 @@ p {
     font-size: clamp(2.15rem, 12vw, 4.1rem);
   }
 
+  .process-method-heading {
+    font-size: clamp(2.35rem, 12vw, 4.5rem);
+  }
+
   .process-text-state p {
     font-size: clamp(0.92rem, 4vw, 1.05rem);
+  }
+}
+
+@media (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .ribbons-cursor {
+    display: none;
   }
 }
 

@@ -5,6 +5,8 @@ const source = readFileSync(new URL("../src/main.jsx", import.meta.url), "utf8")
 const styles = readFileSync(new URL("../src/styles.css", import.meta.url), "utf8");
 
 const requiredCopy = [
+  "The WebLane Method",
+  "A guided process that turns unclear business websites into polished, trustworthy, inquiry-ready experiences.",
   "Discovery",
   "Strategy turns scattered ideas into a guided direction.",
   "Audit",
@@ -51,6 +53,9 @@ const requiredStyles = [
   ".process-section::after",
   ".process-canvas",
   ".process-text-state",
+  ".process-method-intro",
+  ".process-method-heading",
+  ".process-method-summary",
   "color: var(--text)",
   "background: transparent",
   "box-shadow: none",
@@ -76,6 +81,8 @@ assert(source.includes('className="process-text-state process-text-split" data-p
 assert(source.includes('className="process-text-state process-text-right" data-process-state="audit"'), "Audit process text should be on the right");
 assert(source.includes('className="process-text-state process-text-left" data-process-state="structure"'), "Message and Structure process text should be on the left");
 assert(source.includes('className="process-text-state process-text-left" data-process-state="message"'), "Experience process text should be on the left");
+assert(source.includes("SplitText"), "Process method heading should use SplitText");
+assert(source.includes("{ autoAlpha: 0, y: 34, filter: \"blur(8px)\" }"), "Process text should reveal bottom-to-top instead of popping");
 
 const frames = readdirSync(new URL("../public/sequence/process", import.meta.url)).filter((name) => /^process_\d{4}\.png$/.test(name));
 assert.equal(frames.length, 237, "Process should use all 237 extracted frames");
