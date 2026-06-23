@@ -37,7 +37,7 @@ for (const marker of requiredSections) {
 }
 
 const requiredCopy = [
-  "/hero/hero-statement.png",
+  "You Deserve the kind of website your competitors wish they had.",
   "/sections/Long.png",
   "/sections/short1.png",
   "/sections/short2.png",
@@ -107,7 +107,6 @@ const styleMarkers = [
   ".sequence-hero-canvas",
   ".sequence-hero-title",
   ".sequence-hero-title::before",
-  ".sequence-hero-title img",
   ".phrase-regular",
   ".phrase-heavy",
   ".image-bento-section",
@@ -169,6 +168,14 @@ assert(sequenceHero.includes('end: "bottom bottom"'), "Sequence hero should rele
 assert(sequenceHero.includes("scrub: reduceMotion ? false : 0.45"), "Sequence hero should use softened scrub instead of a hard release");
 assert(sequenceHero.includes("pinSpacing: false"), "Sequence hero spacing should be handled by the hero section height");
 assert(styles.includes("height: 430svh"), "Sequence hero should reserve enough physical scroll space before the bento section");
+assert(sequenceHero.includes("<h1 className=\"sequence-hero-title\""), "Hero headline should render as real text above the image sequence");
+assert(styles.includes("z-index: 30"), "Hero headline should sit above the canvas/image sequence layer");
+assert(styles.includes("0 0 18px rgba(59, 130, 246, 0.35)"), "Hero headline should have a subtle readable glow");
+assert(sequenceHero.includes('window.matchMedia("(max-width: 768px)")'), "Hero canvas should switch to mobile contain sizing below 768px");
+assert(source.includes('window.matchMedia("(max-width: 768px)")'), "Process canvas should switch to mobile contain sizing below 768px");
+assert(combinedSource.includes("containScale"), "Mobile canvas rendering should use contain-style image scaling");
+assert(styles.includes("@media (max-width: 768px)"), "Mobile-only animation sizing rules should be scoped below 768px");
+assert(styles.includes(".sequence-hero-canvas,") && styles.includes(".process-canvas {") && styles.includes("max-width: 100vw"), "Mobile canvases should not overflow horizontally");
 assert(styles.includes("object-fit: cover"), "Hero media should cover the viewport without side gaps");
 assert(source.includes('<section className="section image-bento-section"'), "Bento section should not parallax upward into the hero");
 assert(source.includes('<div className="image-bento-grid"'), "Bento grid should not use parallax transforms before its section starts");
@@ -184,10 +191,12 @@ assert(source.includes("/sequence/process/process_"), "Process should read frame
 assert(styles.includes(".process-text-state"), "Process should use dark text state overlays");
 assert(styles.includes(".before-after-section"), "Before/After section should have its own visible section spacing");
 assert(styles.includes("opacity: 1"), "Before/After slider should be visible by default after the bento cards");
-assert(styles.includes("clip-path: polygon(var(--reveal) 0"), "Before image should reveal with a slanted clip-path");
+assert(styles.includes("clip-path: polygon(var(--reveal-top) 0"), "After image should reveal with the shared slanted clip-path boundary");
 assert(styles.includes("skewX(-13deg)"), "Before/After divider should be slanted");
-assert(source.includes('"--reveal": "1%"') && source.includes('"--reveal": "90%"'), "Before/After auto reveal should reveal 90% of the after image");
+assert(source.includes("setComparisonRevealPercent(4)") && source.includes("gsap.utils.interpolate(4, 50, self.progress)"), "Before/After auto reveal should stop around 50%");
 assert(source.includes("onPointerDown={startComparisonDrag}"), "Before/After divider should support manual dragging");
+assert(source.indexOf('className="comparison-layer comparison-before"') < source.indexOf('className="comparison-layer comparison-after"'), "Before image should be the base layer before the After reveal layer");
+assert(source.includes("onKeyDown={handleComparisonKeyDown}"), "Before/After slider should support keyboard adjustment");
 assert(source.includes("pin: true"), "Why WebLane should use pinned horizontal scrolling on desktop");
 assert(styles.includes(".horizontal-belief-track"), "Why WebLane should use a horizontal track");
 assert(!source.includes('".image-bento-card, .comparison-slider'), "Before/After slider should not be hidden by generic reveal animation");

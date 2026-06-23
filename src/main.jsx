@@ -205,54 +205,113 @@ function BeforeAfter() {
   const sliderRef = useRef(null);
   const isDraggingRef = useRef(false);
 
-  const setComparisonReveal = useCallback((clientX) => {
+  const setComparisonRevealPercent = useCallback((percent) => {
     const slider = sliderRef.current;
     const stage = sectionRef.current?.querySelector(".transformation-stage");
     if (!slider || !stage) return;
 
     const rect = slider.getBoundingClientRect();
-    const nextReveal = Math.min(96, Math.max(4, ((clientX - rect.left) / rect.width) * 100));
+    const nextReveal = Math.min(96, Math.max(4, percent));
+    const slantPercent = Math.min(10, ((rect.height * Math.tan(13 * Math.PI / 180)) / 2 / rect.width) * 100);
+    const revealTop = Math.min(100, nextReveal + slantPercent);
+    const revealBottom = Math.max(0, nextReveal - slantPercent);
+
     stage.style.setProperty("--reveal", `${nextReveal}%`);
+    stage.style.setProperty("--reveal-top", `${revealTop}%`);
+    stage.style.setProperty("--reveal-bottom", `${revealBottom}%`);
+    slider.setAttribute("aria-valuenow", String(Math.round(nextReveal)));
   }, []);
 
+  const setComparisonReveal = useCallback((clientX) => {
+    const slider = sliderRef.current;
+    if (!slider) return;
+
+    const rect = slider.getBoundingClientRect();
+    setComparisonRevealPercent(((clientX - rect.left) / rect.width) * 100);
+  }, [setComparisonRevealPercent]);
+
+  const handleComparisonKeyDown = useCallback((event) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+
+    event.preventDefault();
+    const stage = sectionRef.current?.querySelector(".transformation-stage");
+    const currentReveal = Number.parseFloat(stage?.style.getPropertyValue("--reveal")) || 50;
+    const nextReveal = event.key === "Home"
+      ? 4
+      : event.key === "End"
+        ? 96
+        : currentReveal + (event.key === "ArrowRight" ? 4 : -4);
+
+    setComparisonRevealPercent(nextReveal);
+  }, [setComparisonRevealPercent]);
+
   const startComparisonDrag = useCallback((event) => {
+    event.preventDefault();
     isDraggingRef.current = true;
-    event.currentTarget.setPointerCapture?.(event.pointerId);
+    try {
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+    } catch {
+    }
     setComparisonReveal(event.clientX);
   }, [setComparisonReveal]);
 
   const moveComparisonDrag = useCallback((event) => {
     if (!isDraggingRef.current) return;
+    event.preventDefault();
     setComparisonReveal(event.clientX);
   }, [setComparisonReveal]);
 
   const endComparisonDrag = useCallback((event) => {
     isDraggingRef.current = false;
-    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    try {
+      event.currentTarget.releasePointerCapture?.(event.pointerId);
+    } catch {
+    }
   }, []);
+
+  useEffect(() => {
+    const handleWindowPointerMove = (event) => {
+      if (!isDraggingRef.current) return;
+
+      event.preventDefault();
+      setComparisonReveal(event.clientX);
+    };
+
+    const handleWindowPointerUp = () => {
+      isDraggingRef.current = false;
+    };
+
+    window.addEventListener("pointermove", handleWindowPointerMove, { passive: false });
+    window.addEventListener("pointerup", handleWindowPointerUp);
+    window.addEventListener("pointercancel", handleWindowPointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handleWindowPointerMove);
+      window.removeEventListener("pointerup", handleWindowPointerUp);
+      window.removeEventListener("pointercancel", handleWindowPointerUp);
+    };
+  }, [setComparisonReveal]);
 
   useGSAP(
     () => {
-      const stage = sectionRef.current?.querySelector(".transformation-stage");
-      if (!stage) return undefined;
+      if (!sectionRef.current || !sliderRef.current) return undefined;
 
-      gsap.set(stage, { "--reveal": "1%" });
-      gsap.fromTo(
-        stage,
-        { "--reveal": "1%" },
-        {
-          "--reveal": "90%",
-          ease: "none",
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: "top 76%",
-            end: "bottom 28%",
-            scrub: true
+      setComparisonRevealPercent(4);
+
+      const scrollReveal = ScrollTrigger.create({
+        trigger: sectionRef.current,
+        start: "top 76%",
+        end: "bottom 28%",
+        onUpdate: (self) => {
+          if (!isDraggingRef.current) {
+            setComparisonRevealPercent(gsap.utils.interpolate(4, 50, self.progress));
           }
         }
-      );
+      });
+
+      return () => scrollReveal.kill();
     },
-    { scope: sectionRef }
+    { scope: sectionRef, dependencies: [setComparisonRevealPercent] }
   );
 
   return (
@@ -275,14 +334,15 @@ function BeforeAfter() {
           onPointerMove={moveComparisonDrag}
           onPointerUp={endComparisonDrag}
           onPointerCancel={endComparisonDrag}
+          onKeyDown={handleComparisonKeyDown}
         >
-          <div className="comparison-layer comparison-after">
-            <img src="/sections/after image.png" alt="After website state" loading="eager" fetchPriority="high" />
-            <span>After</span>
-          </div>
           <div className="comparison-layer comparison-before">
             <img src="/sections/before image.png" alt="Before website state" loading="eager" fetchPriority="high" />
             <span>Before</span>
+          </div>
+          <div className="comparison-layer comparison-after">
+            <img src="/sections/after image.png" alt="After website state" loading="eager" fetchPriority="high" />
+            <span>After</span>
           </div>
           <div className="comparison-divider" aria-hidden="true">
             <span />
@@ -339,11 +399,13 @@ function Process() {
 
     context.clearRect(0, 0, width, height);
 
+    const isMobileCanvas = window.matchMedia("(max-width: 768px)").matches;
     const imageRatio = image.naturalWidth / image.naturalHeight;
     const canvasRatio = width / height;
     const coverByHeight = imageRatio > canvasRatio;
-    const drawWidth = coverByHeight ? height * imageRatio : width;
-    const drawHeight = coverByHeight ? height : width / imageRatio;
+    const containScale = Math.min(width / image.naturalWidth, height / image.naturalHeight);
+    const drawWidth = isMobileCanvas ? image.naturalWidth * containScale : coverByHeight ? height * imageRatio : width;
+    const drawHeight = isMobileCanvas ? image.naturalHeight * containScale : coverByHeight ? height : width / imageRatio;
     const x = (width - drawWidth) / 2;
     const y = (height - drawHeight) / 2;
 

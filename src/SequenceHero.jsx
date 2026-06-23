@@ -57,11 +57,13 @@ export default function SequenceHero() {
 
     context.clearRect(0, 0, width, height);
 
+    const isMobileCanvas = window.matchMedia("(max-width: 768px)").matches;
     const imageRatio = image.naturalWidth / image.naturalHeight;
     const canvasRatio = width / height;
     const coverByHeight = imageRatio > canvasRatio;
-    const drawWidth = coverByHeight ? height * imageRatio : width;
-    const drawHeight = coverByHeight ? height : width / imageRatio;
+    const containScale = Math.min(width / image.naturalWidth, height / image.naturalHeight);
+    const drawWidth = isMobileCanvas ? image.naturalWidth * containScale : coverByHeight ? height * imageRatio : width;
+    const drawHeight = isMobileCanvas ? image.naturalHeight * containScale : coverByHeight ? height : width / imageRatio;
     const x = (width - drawWidth) / 2;
     const y = (height - drawHeight) / 2;
 
@@ -205,6 +207,7 @@ export default function SequenceHero() {
   useGSAP(
     () => {
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const isMobileCanvas = window.matchMedia("(max-width: 768px)").matches;
 
       gsap.set(".sequence-hero-title", {
         autoAlpha: 1,
@@ -213,8 +216,8 @@ export default function SequenceHero() {
       });
 
       gsap.set(".sequence-hero-canvas-wrap", {
-        scale: 1.05,
-        yPercent: 2,
+        scale: isMobileCanvas ? 1 : 1.05,
+        yPercent: isMobileCanvas ? 0 : 2,
         rotateX: 0,
         transformOrigin: "50% 50%"
       });
@@ -288,9 +291,25 @@ export default function SequenceHero() {
             data-duration={RENDER_DURATION_SECONDS}
           />
         </div>
-        <div className="sequence-hero-title" aria-hidden="true">
-          <img src="/hero/hero-statement.png" alt="" draggable="false" />
-        </div>
+        <h1 className="sequence-hero-title" aria-label="You Deserve the kind of website your competitors wish they had.">
+          <span className="phrase-line">
+            <span className="phrase-regular">You </span>
+            <span className="phrase-heavy">Deserve</span>
+          </span>
+          <span className="phrase-line">
+            <span className="phrase-regular">the kind of </span>
+            <span className="phrase-heavy">website</span>
+          </span>
+          <span className="phrase-line">
+            <span className="phrase-regular">your </span>
+            <span className="phrase-heavy">competitors</span>
+            <span className="phrase-regular"> wish</span>
+          </span>
+          <span className="phrase-line">
+            <span className="phrase-regular">they </span>
+            <span className="phrase-heavy">had.</span>
+          </span>
+        </h1>
       </div>
     </section>
   );

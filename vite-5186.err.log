@@ -1,0 +1,34 @@
+[2m4:20:21 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mNotFoundError[22m: Failed to execute 'setPointerCapture' on 'Element': No active pointer with the given id is found.
+[39m > src/main.jsx:251:44
+    249 |      event.preventDefault();
+    250 |      isDraggingRef.current = true;
+    251 |      event.currentTarget.setPointerCapture?.(event.pointerId);
+        |                                              ^
+    252 |      setComparisonReveal(event.clientX);
+    253 |    }, [setComparisonReveal]);
+ > executeDispatch node_modules/react-dom/cjs/react-dom-client.development.js:19116:8
+ > runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+ > processDispatchQueue node_modules/react-dom/cjs/react-dom-client.development.js:19166:18
+ > node_modules/react-dom/cjs/react-dom-client.development.js:19767:8
+ > batchedUpdates$1 node_modules/react-dom/cjs/react-dom-client.development.js:3255:39
+ > dispatchEventForPluginEventSystem node_modules/react-dom/cjs/react-dom-client.development.js:19320:6
+ > dispatchEvent node_modules/react-dom/cjs/react-dom-client.development.js:23585:10
+ > dispatchDiscreteEvent node_modules/react-dom/cjs/react-dom-client.development.js:23553:10
+
+[2m4:20:30 PM[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mNotFoundError[22m: Failed to execute 'setPointerCapture' on 'Element': No active pointer with the given id is found.
+[39m > src/main.jsx:251:44
+    249 |      event.preventDefault();
+    250 |      isDraggingRef.current = true;
+    251 |      event.currentTarget.setPointerCapture?.(event.pointerId);
+        |                                              ^
+    252 |      setComparisonReveal(event.clientX);
+    253 |    }, [setComparisonReveal]);
+ > executeDispatch node_modules/react-dom/cjs/react-dom-client.development.js:19116:8
+ > runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:871:29
+ > processDispatchQueue node_modules/react-dom/cjs/react-dom-client.development.js:19166:18
+ > node_modules/react-dom/cjs/react-dom-client.development.js:19767:8
+ > batchedUpdates$1 node_modules/react-dom/cjs/react-dom-client.development.js:3255:39
+ > dispatchEventForPluginEventSystem node_modules/react-dom/cjs/react-dom-client.development.js:19320:6
+ > dispatchEvent node_modules/react-dom/cjs/react-dom-client.development.js:23585:10
+ > dispatchDiscreteEvent node_modules/react-dom/cjs/react-dom-client.development.js:23553:10
+
